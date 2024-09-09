@@ -51,6 +51,11 @@ contract FarmerMarketplace {
         require(product.exists, "Product does not exist");
         require(_quantity <= product.quantity, "Not enough quantity available");
 
+        // Revert if quantity requested is zero
+        if (_quantity == 0) {
+            revert("Quantity must be greater than zero");
+        }
+
         // Reduce the product quantity by the amount purchased
         product.quantity -= _quantity;
 
@@ -67,5 +72,24 @@ contract FarmerMarketplace {
         product.quantity = _newQuantity;
 
         emit ProductUpdated(_productId, _newPrice, _newQuantity);
+    }
+
+    // Assertion to check product exists and has correct ownership
+    function checkProductOwnership(uint _productId) public view returns (bool) {
+        Product storage product = products[_productId];
+        assert(product.exists && product.farmer == msg.sender); // Ensures farmer owns the product
+
+        return true;
+    }
+
+    // Function to remove product using revert if the caller is not the farmer
+    function removeProduct(uint _productId) public onlyFarmer(_productId) {
+        Product storage product = products[_productId];
+
+        if (product.quantity != 0) {
+            revert("Cannot remove a product that still has quantity left");
+        }
+
+        delete products[_productId];
     }
 }
